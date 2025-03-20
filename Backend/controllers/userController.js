@@ -153,6 +153,7 @@ export async function loginController(req, res) {
     });
   }
 }
+
 export async function logoutController(req, res) {
   try {
     const userId = req.userId; //middleware
@@ -178,5 +179,14 @@ export async function logoutController(req, res) {
       error: true,
       success: false,
     });
+  }
+}
+
+export async function uploadAvatar(req, res) {
+  try {
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: error.message, error: true, success: false });
   }
 }

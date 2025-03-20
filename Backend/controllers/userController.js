@@ -211,3 +211,44 @@ export async function uploadAvatar(req, res) {
       .json({ message: error.message, error: true, success: false });
   }
 }
+
+export async function updateUserDetails(req, res) {
+  try {
+    const userId = req.userId; //auth middleware
+    const { name, email, password, mobile } = req.body;
+    const hashPassword = "";
+    if (password) {
+      const salt = await bcryptjs.genSalt(7);
+      hashPassword = await bcryptjs.hash(password, salt);
+    }
+    /*const updateUser = await UserModel.findByIdAndUpdate(userId, {
+      ...(name && { name: name }),
+      ...(email && { email: email }),
+      ...(mobile && { mobile: mobile }),
+      ...(password && { password: hashPassword }),
+    });*/
+
+    const updateUser = await UserModel.updateOne(
+      { _id: userId },
+      {
+        ...(name && { name: name }),
+        ...(email && { email: email }),
+        ...(mobile && { mobile: mobile }),
+        ...(password && { password: hashPassword }),
+      }
+    );
+
+    return res.json({
+      message: "User Details Updated",
+      success: true,
+      error: false,
+      data: updateUser,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || error,
+      success: false,
+      error: true,
+    });
+  }
+}

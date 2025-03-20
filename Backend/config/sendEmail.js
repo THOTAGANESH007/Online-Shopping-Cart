@@ -1,27 +1,34 @@
 import { Resend } from "resend";
 import dotenv from "dotenv";
+
 dotenv.config();
-if (process.env.RESEND_API) {
-  console.log("Provide RESEND_API inside the .env file");
+
+if (!process.env.RESEND_API) {
+  console.error("Provide RESEND_API inside the .env file");
+  process.exit(1);
 }
 
 const resend = new Resend(process.env.RESEND_API);
 
-const sendEmail =
-  () =>
-  async ({ sendTo, subject, html }) => {
-    try {
-      const { data, error } = await resend.emails.send({
-        from: "Magiccu <onboarding@resend.dev>",
-        to: sendTo,
-        subject: subject,
-        html: html,
-      });
-      if (error) return console.log(error);
-      return data;
-    } catch (error) {
-      console.log(error);
+const sendEmail = async ({ to, subject, html }) => {
+  try {
+    const response = await resend.emails.send({
+      from: "Magiccu <dontNeed@resend.dev>",
+      to: [to],
+      subject,
+      html,
+    });
+
+    if (response.error) {
+      console.error("Email sending failed:", response.error);
+      return null;
     }
-  };
+
+    return response.data;
+  } catch (error) {
+    console.error("Unexpected error while sending email:", error);
+    return null;
+  }
+};
 
 export default sendEmail;

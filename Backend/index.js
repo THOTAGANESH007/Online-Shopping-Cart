@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import helmet from "helmet";
 import connectDB from "./config/connectDB.js";
+import userRouter from "./routes/userRoute.js";
 dotenv.config();
 
 const app = express();
@@ -27,6 +28,9 @@ app.use(
 app.get("/", (req, res) => {
   res.json({ message: "Server is Running..." });
 });
+
+app.use("/api/user", userRouter);
+
 connectDB()
   .then(() => {
     app.listen(process.env.PORT, () => {

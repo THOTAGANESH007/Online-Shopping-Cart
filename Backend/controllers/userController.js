@@ -12,8 +12,8 @@ export async function registerUserController(req, res) {
         success: false,
       });
 
-    const user = UserModel.findOne({ email });
-    if (user) {
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
       return res
         .status(400)
         .json({ message: "User Already Exists", error: true, success: false });
@@ -32,14 +32,20 @@ export async function registerUserController(req, res) {
     const save = await newUser.save();
     const verifyEmailUrl = `${process.env.FRONTEND_URL}/verify-email?code=${save._id}`;
 
-    const verifyEmail = await sendEmail({
-      sendTo: email,
-      subject: "Verify email from magiccu",
-      html: verifyEmailTemplate({
-        name,
-        url: verifyEmailUrl,
-      }),
+    // Send verification email
+    const emailResponse = await sendEmail({
+      to: email,
+      subject: "Verify your email",
+      html: verifyEmailTemplate({ name, url: verifyEmailUrl }),
     });
+
+    if (!emailResponse) {
+      return res.status(500).json({
+        message: "User registered, but email sending failed",
+        error: true,
+        success: false,
+      });
+    }
 
     return res.json({
       message: "User Registration Successful",

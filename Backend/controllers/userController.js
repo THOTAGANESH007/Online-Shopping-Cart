@@ -153,3 +153,30 @@ export async function loginController(req, res) {
     });
   }
 }
+export async function logoutController(req, res) {
+  try {
+    const userId = req.userId; //middleware
+    const cookiesOption = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+    };
+    res.clearCookie("accessToken", cookiesOption);
+    res.clearCookie("refreshToken", cookiesOption);
+
+    const removeRefreshToken = await UserModel.findByIdAndUpdate(userId, {
+      refresh_token: "",
+    });
+    return res.json({
+      message: "Logout Success!!",
+      error: false,
+      success: true,
+    });
+  } catch (error) {
+    return res.json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
+}

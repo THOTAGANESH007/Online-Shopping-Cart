@@ -16,14 +16,15 @@ app.use(
   })
 );
 
-app.use(express.json());
 app.use(cookieParser());
 app.use(morgan());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
   })
 );
+app.use(express.json());
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is Running..." });

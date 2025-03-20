@@ -4,6 +4,8 @@ import bcryptjs from "bcryptjs";
 import verifyEmailTemplate from "../utils/verifyEmailTemplate.js";
 import generateAccessToken from "../utils/generateAccessToken.js";
 import generateRefreshToken from "../utils/generateRefreshToken.js";
+import { request } from "express";
+import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
 export async function registerUserController(req, res) {
   try {
     const { name, email, password } = req.body;
@@ -97,7 +99,7 @@ export async function loginController(req, res) {
 
     if (!email || !password)
       return res.status(400).json({
-        message: "Missing Email or Password fiels",
+        message: "Missing Email or Password fields",
         error: true,
         success: false,
       });
@@ -112,7 +114,7 @@ export async function loginController(req, res) {
     if (existedUser.status !== "Active")
       return res
         .status(400)
-        .json({ message: "Contact To Admin", error: true, success: flase });
+        .json({ message: "Contact To Admin", error: true, success: false });
 
     const checkPassword = await bcryptjs.compare(
       password,
@@ -184,6 +186,25 @@ export async function logoutController(req, res) {
 
 export async function uploadAvatar(req, res) {
   try {
+    const userId = req.userId; //auth middleware
+    const image = req.file; //multer middleware
+    if (!image) {
+      return res
+        .status(400)
+        .json({ message: "No file uploaded", error: true, success: false });
+    }
+
+    const upload = await uploadImageCloudinary(image);
+    const updateUser = await UserModel.findByIdAndUpdate(userId, {
+      avatar: upload.url,
+    });
+    return res.json({
+      message: "Uploaded Profile",
+      data: {
+        _id: userId,
+        avatar: upload.url,
+      },
+    });
   } catch (error) {
     return res
       .status(500)

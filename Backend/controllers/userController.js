@@ -272,7 +272,7 @@ export async function forgotPasswordController(req, res) {
 
     const update = await UserModel.findByIdAndUpdate(isPresent._id, {
       forgot_password_otp: otp,
-      forgot_password_expired: expireTime, //new Date(expireTime).toISOString(),
+      forgot_password_expired: new Date(expireTime).toISOString(),
     });
 
     await sendEmail({
@@ -293,6 +293,111 @@ export async function forgotPasswordController(req, res) {
       message: error.message,
       success: false,
       error: true,
+    });
+  }
+}
+
+//verify forgot password otp
+export async function verifyForgotPasswordOtp(req, res) {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        message: "Provide required field email or otp",
+        error: true,
+        success: false,
+      });
+    }
+
+    const isPresent = await UserModel.findOne({ email });
+    if (!isPresent) {
+      return res.status(400).json({
+        message: "Email doesnot exist",
+        error: true,
+        success: false,
+      });
+    }
+
+    const currentTime = new Date().toISOString();
+
+    if (isPresent.forgot_password_expired < currentTime) {
+      return res.status(400).json({
+        message: "Otp is Expired",
+        error: true,
+        success: false,
+      });
+    }
+
+    if (otp !== isPresent.forgot_password_otp) {
+      return res.status(400).json({
+        message: "Invalid Otp",
+        error: true,
+        success: false,
+      });
+    }
+
+    //if otp isnot expired and matches db otp
+    return res.json({
+      message: "Verification of otp is done",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+}
+
+//reset the password
+export async function resetPassword(req, res) {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    if (!email || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message: "Provide required fields",
+      });
+    }
+
+    const user = await UserModel.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Email is not available",
+        error: true,
+        success: false,
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "new Password & confirm Password not matched",
+        error: true,
+        success: false,
+      });
+    }
+
+    const salt = await bcryptjs.genSalt(7);
+    const hashPassword = await bcryptjs.hash(newPassword, salt);
+
+    const update = await UserModel.findOneAndUpdate(user._id, {
+      password: hashPassword,
+    });
+
+    return res.json({
+      message: "Password Updated Successfully",
+      error: false,
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
     });
   }
 }

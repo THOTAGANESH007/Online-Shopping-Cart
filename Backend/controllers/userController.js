@@ -6,6 +6,8 @@ import generateAccessToken from "../utils/generateAccessToken.js";
 import generateRefreshToken from "../utils/generateRefreshToken.js";
 import { request } from "express";
 import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
+import generateOtp from "../utils/generateOtp.js";
+import forgotPasswordTemplate from "../utils/forgotPasswordTemplate.js";
 export async function registerUserController(req, res) {
   try {
     const { name, email, password } = req.body;
@@ -247,6 +249,48 @@ export async function updateUserDetails(req, res) {
   } catch (error) {
     return res.status(500).json({
       message: error.message || error,
+      success: false,
+      error: true,
+    });
+  }
+}
+
+//forgot password without login
+export async function forgotPasswordController(req, res) {
+  try {
+    const { email } = req.body;
+    const isPresent = await UserModel.findOne({ email });
+    if (!isPresent) {
+      return res.status(400).json({
+        message: "Email doesnot exist",
+        error: true,
+        success: false,
+      });
+    }
+    const otp = generateOtp();
+    const expireTime = new Date() + 60 * 60 * 1000; //1hr
+
+    const update = await UserModel.findByIdAndUpdate(isPresent._id, {
+      forgot_password_otp: otp,
+      forgot_password_expired: expireTime, //new Date(expireTime).toISOString(),
+    });
+
+    await sendEmail({
+      to: email,
+      subject: "Forgot password From Magiccu",
+      html: forgotPasswordTemplate({
+        name: isPresent.name,
+        otp: otp,
+      }),
+    });
+    return res.json({
+      message: "Check Your Email",
+      error: false,
+      success: true,
+    });
+  } catch (error) {
+    return rres.status(500).json({
+      message: error.message,
       success: false,
       error: true,
     });
